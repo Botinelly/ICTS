@@ -1,0 +1,69 @@
+version: '3.7'
+
+services:
+  frontend:
+    container_name: frontend
+    env_file: .env
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - '.:/app'
+      - '/app/node_modules'
+    ports:
+      - ${FRONTEND_PORT_HOST}:${FRONTEND_PORT_DOCKER}
+    depends_on:
+      - "thanos-core-backend"
+    networks:
+      - production-network
+  
+  backend:
+    image: python3.7
+    container_name: app
+    privileged: true
+    env_file: .env
+    ports:
+      - ${BUSINESS_PORT_HOST}:${BUSINESS_PORT_DOCKER}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - mongodb
+      - mongodb_logs
+    volumes:
+      - '/ICTS'
+    networks:
+      - production-network
+
+  mongodb:
+    image: mongo:4.4.1
+    restart: always
+    container_name: test-db
+    env_file: .env
+    ports:
+      - ${MONGODB_BEGIN_HOST}:${MONGODB_END_HOST}:${MONGODB_BEGIN_DOCKER}:${MONGODB_BEGIN_HOST}
+    volumes:
+      - db-data:/data/db
+    networks:
+      - production-network
+  
+  mongodb_logs:
+    image: mongo:4.4.1
+    restart: always
+    container_name: test-logs-db
+    env_file: .env
+    ports:
+      - ${MONGODB_BEGIN_HOST}:${MONGODB_END_HOST}:${MONGODBLOG_BEGIN_DOCKER}:${MONGODB_BEGIN_HOST}
+    volumes:
+      - db-data:/data/db_log
+    networks:
+      - production-network
+
+volumes:
+  db-data:
+  data-files:
+
+networks:
+  production-network:
+    driver: bridge
+      
